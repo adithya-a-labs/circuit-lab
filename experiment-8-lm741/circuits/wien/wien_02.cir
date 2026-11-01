@@ -1,0 +1,22 @@
+wien_02 - original lab topology; National Semiconductor LM741 macromodel
+.include /workspace/circuit-outputs/experiment-8-lm741/models/LM741_ngspice.lib
+Vpos vp 0 15
+Vneg vn 0 -15
+.model D4148 D(Is=2.52n Rs=0.568 N=1.752 Cjo=4p M=0.4 Tt=20n)
+Rin minus 0 1k
+RF out minus 2010
+R1 plus 0 1000
+C1 plus 0 2.2e-07 IC=0.05
+R2 out series 1000
+C2 series plus 2.2e-07
+XU plus minus vp vn out LM741/NS
+.ic v(plus)=0.05
+.options reltol=1e-5 abstol=1e-10 method=gear maxord=2
+.control
+set wr_singlescale
+set wr_vecnames
+tran 1.8333333333333335e-06 1.1 0 1.8333333333333335e-06 
+wrdata /workspace/circuit-outputs/experiment-8-lm741/simulation_data/wien_02.txt v(out) v(plus)
+quit
+.endc
+.end

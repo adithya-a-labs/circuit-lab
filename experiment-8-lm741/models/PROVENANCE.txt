@@ -1,0 +1,9 @@
+LM741/NS - National Semiconductor copyright. Model header explicitly permits copying and distribution, prohibits resale. Original model file retained without modification; working copy has the compatibility changes listed below.
+Downloaded 1 Nov 2026 from:
+https://raw.githubusercontent.com/drahnr/oregano/25919de7ec2cf3e5053d4a9497b31188d355d653/data/models/LM741.model
+Pinned repository revision: 25919de7ec2cf3e5053d4a9497b31188d355d653
+Pin order: noninverting (package 3), inverting (2), positive supply (7), negative supply (4), output (6).
+Macro subcircuit name: LM741/NS; formal node names 1 2 99 50 28.
+This is a publicly mirrored manufacturer-attributed model; it is not independently authenticated against a current TI-hosted release and no physical hardware validation is claimed.
+
+Compatibility: original unchanged in LM741.model. Working LM741_ngspice.lib translates EOS and F6 first-order POLY sources to exactly equivalent B-source expressions, without changing coefficients or device values. This avoids unavailable POLY XSPICE code-model initialization in this ngspice distribution. Initial unmodified-model runs failed before producing data.

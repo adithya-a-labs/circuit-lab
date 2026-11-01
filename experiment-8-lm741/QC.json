@@ -1,0 +1,85 @@
+{
+  "behavior": {
+    "final_trials": 13,
+    "passes": 12,
+    "failures": [
+      {
+        "name": "bistable_01",
+        "reason": "12 V / 0.2 us trigger edges decay through R*C before LM741 output changes state; no topology change made."
+      }
+    ],
+    "successful_trials_per_circuit": {
+      "wien": 3,
+      "astable": 3,
+      "monostable": 3,
+      "bistable": 3
+    }
+  },
+  "logs": "PASS: 13 final transient logs; no timestep-too-small or error; missing-spinit warning retained",
+  "model": {
+    "status": "PASS exact two-source algebraic compatibility translation",
+    "source_sha256": "329407dccfdcf493b13574082ee296006c31d876abacae4797a0d068145484b8",
+    "validation": {
+      "follower_max_error_V": 0.0010265499999999594,
+      "positive_open_loop_saturation_V": 14.0271682,
+      "negative_open_loop_saturation_V": -14.0271682,
+      "slew_V_per_us": 0.3205432070513346,
+      "pin_order": "noninverting,inverting,+supply,-supply,out",
+      "supply_V": "+15/-15",
+      "model": "National Semiconductor LM741/NS",
+      "status": "PASS (macromodel validation; not physical hardware)"
+    },
+    "limitation": "manufacturer-attributed mirrored macromodel; no hardware validation or comparison to current TI release"
+  },
+  "PNG": {
+    "total": 13,
+    "successful_waveforms": 12,
+    "failed_baseline_diagnostic": 1,
+    "DPI": 300,
+    "decode_white_background": "PASS"
+  },
+  "Bistable_Baseline_Failure.pdf": {
+    "pages": 1,
+    "A4_text_bounds": "PASS"
+  },
+  "Experiment_8_Complete_Report.pdf": {
+    "pages": 34,
+    "A4_text_bounds": "PASS"
+  },
+  "Experiment_8_Waveform_Printouts.pdf": {
+    "pages": 12,
+    "A4_text_bounds": "PASS"
+  },
+  "DOCX": "PASS XML/ZIP integrity; PDF is print-layout reference",
+  "refinement": {
+    "wien_01": {
+      "base_metric_s": 0.006288712338024428,
+      "half_step_metric_s": 0.006288604587608137,
+      "relative_difference_percent": 0.0017133939429744454,
+      "status": "PASS"
+    },
+    "astable_01": {
+      "base_metric_s": 0.001144442637279381,
+      "half_step_metric_s": 0.0011444421512710778,
+      "relative_difference_percent": 4.24668120036913e-05,
+      "status": "PASS"
+    },
+    "monostable_01": {
+      "base_metric_s": 0.001142205329031614,
+      "half_step_metric_s": 0.001142208587129278,
+      "relative_difference_percent": 0.00028524623209400364,
+      "status": "PASS"
+    },
+    "bistable_02": {
+      "base_metric_s": 0.0010432579447830629,
+      "half_step_metric_s": 0.0010432581508427905,
+      "relative_difference_percent": 1.975156083767518e-05,
+      "status": "PASS"
+    }
+  },
+  "repository": {
+    "status": "clean including untracked",
+    "commit": "325cb6018c3894825157452ffb1294e3977792c1"
+  },
+  "delivery": "Cloud workspace only per user instruction; no external upload"
+}

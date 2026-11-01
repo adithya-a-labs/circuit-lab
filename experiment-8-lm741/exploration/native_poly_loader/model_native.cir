@@ -1,0 +1,19 @@
+LM741 polarity, follower, rails and slew validation
+.include /workspace/circuit-outputs/experiment-8-lm741/models/LM741.model
+Vpos vp 0 15
+Vneg vn 0 -15
+Vin input 0 PULSE(-5 5 50u 0.1u 0.1u 50u 150u)
+Xf input follow vp vn follow LM741/NS
+Rload follow 0 10k
+Xo input 0 vp vn open LM741/NS
+.options method=gear reltol=1e-5
+.control
+set wr_singlescale
+set wr_vecnames
+dc Vin -1 1 0.05
+wrdata /workspace/circuit-outputs/experiment-8-lm741/simulation_data/model_native_dc.txt v(follow) v(open)
+tran 0.1u 200u 0 0.1u
+wrdata /workspace/circuit-outputs/experiment-8-lm741/simulation_data/model_native_slew.txt v(follow) v(input)
+quit
+.endc
+.end

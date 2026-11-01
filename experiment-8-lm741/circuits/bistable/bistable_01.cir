@@ -1,0 +1,21 @@
+bistable_01 - original lab topology; National Semiconductor LM741 macromodel
+.include /workspace/circuit-outputs/experiment-8-lm741/models/LM741_ngspice.lib
+Vpos vp 0 15
+Vneg vn 0 -15
+.model D4148 D(Is=2.52n Rs=0.568 N=1.752 Cjo=4p M=0.4 Tt=20n)
+R1 out plus 10k
+R2 plus 0 10k
+C trigger minus 1e-07
+R minus 0 100
+Vtrigger trigger 0 PWL(0 0 1m 0 1.0002m 12 1.2m 12 1.2002m 0 3m 0 3.0002m -12 3.2m -12 3.2002m 0 5m 0 5.0002m 12 5.2m 12 5.2002m 0 7m 0 7.0002m -12 7.2m -12 7.2002m 0 9m 0)
+XU plus minus vp vn out LM741/NS
+.nodeset v(out)=11 v(plus)=5.5
+.options reltol=1e-5 abstol=1e-10 method=gear maxord=2
+.control
+set wr_singlescale
+set wr_vecnames
+tran 1e-07 0.009 0 1e-07 
+wrdata /workspace/circuit-outputs/experiment-8-lm741/simulation_data/bistable_01.txt v(out) v(trigger) v(minus) v(plus)
+quit
+.endc
+.end

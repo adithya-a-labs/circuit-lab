@@ -1,0 +1,108 @@
+from pathlib import Path
+import json, math, html, textwrap
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image, Preformatted
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from docx import Document
+from docx.shared import Inches
+ROOT=Path(__file__).resolve().parents[1]; rows=json.loads((ROOT/'calculations/observations.json').read_text())
+styles=getSampleStyleSheet();styles['Normal'].fontSize=10;styles['Normal'].leading=14
+story=[];md=[];doc=Document();section=doc.sections[0];section.page_width=Inches(8.27);section.page_height=Inches(11.69)
+def h(s,level=1):
+ story.append(Paragraph(html.escape(s),styles['Heading'+str(level)]));md.append('#'*level+' '+s+'\n');doc.add_heading(s,level)
+def p(s):
+ story.append(Paragraph(html.escape(s),styles['Normal']));story.append(Spacer(1,7));md.append(s+'\n');doc.add_paragraph(s)
+def page(): story.append(PageBreak());doc.add_page_break()
+def table(headers,data):
+ dat=[[Paragraph(html.escape(str(x)),styles['Normal']) for x in row] for row in [headers]+data]
+ t=Table(dat,repeatRows=1,hAlign='LEFT');t.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),colors.HexColor('#eeeeee')),('GRID',(0,0),(-1,-1),.4,colors.grey),('VALIGN',(0,0),(-1,-1),'TOP'),('LEFTPADDING',(0,0),(-1,-1),5),('RIGHTPADDING',(0,0),(-1,-1),5)]));story.append(t);story.append(Spacer(1,10))
+ md.append('| '+' | '.join(headers)+' |\n| '+' | '.join(['---']*len(headers))+' |\n'+'\n'.join('| '+' | '.join(map(str,r))+' |' for r in data)+'\n')
+ dt=doc.add_table(rows=1,cols=len(headers));dt.style='Table Grid'
+ for cell,val in zip(dt.rows[0].cells,headers):cell.text=str(val)
+ for row in data:
+  for cell,val in zip(dt.add_row().cells,row):cell.text=str(val)
+def pic(path,width=6.3):
+ from PIL import Image as PI
+ with PI.open(path) as im: w,hh=im.size
+ story.append(Image(str(path),width=width*72,height=width*72*hh/w));doc.add_picture(str(path),width=Inches(width));md.append(f'![{path.stem}]({"../"+str(path.relative_to(ROOT))})\n')
+h('Experiment 8: Oscillator and Multivibrator Circuits')
+p('EC3091D - Electronic Circuits Lab II | LM741 macromodel revision | 1 November 2026')
+p('Evidence status: 13 final LM741 macromodel trials were simulated. 12 pass circuit-behavior checks; one original-value bistable trial fails to switch. The 12-sheet fair-record PDF contains successful trials only. A separate failure sheet preserves the baseline result. These are manufacturer-attributed macromodel simulations, not physical hardware measurements or independent authentication against a current TI download.')
+h('Aim',2);p('To design, set up and study a Wien-bridge oscillator and astable, monostable and bistable multivibrator circuits, and investigate frequency, pulse timing and state retention as resistor/capacitor values change.')
+h('Apparatus and software',2);p('ngspice 44.2; Python 3.12 with NumPy 2.5.4, SciPy 1.18.1, Matplotlib 3.11.2 (Agg). Existing system Python provides ReportLab, python-docx and PyMuPDF for documents and checks. Every circuit uses +/-15 V supplies. No packages were installed. The existing circuit-lab checkout and cloud configuration were preserved.')
+h('Source priority',2);p('All three pages of the original lab PDF were read and inspected as images before the earlier netlist implementation; those images are reproduced in the appendix. The uploaded reference report labels its waveforms theoretical illustrations. None of those illustrations is used as measured evidence. Uploaded ASC files are supplementary connection checks only. New measurements in this revision come exclusively from LM741 numerical transient data. Earlier educational-model results remain in the separate experiment-8 directory and are superseded for device-specific interpretation.')
+h('Model source, license and provenance',2);p('The model is National Semiconductor LM741/NS, downloaded from drahnr/oregano at pinned revision 25919de7ec2cf3e5053d4a9497b31188d355d653, data/models/LM741.model. The original header attributes National Semiconductor copyright and explicitly permits copying and distribution while prohibiting resale. The complete notice is retained in models/LM741.model. Source URL, revision and compatibility changes are in models/PROVENANCE.txt. The manufacturer-hosted URL still returned a proxy CONNECT 403 in this runtime; the readable runtime policy still reported restricted/enforced. This successful acquisition used an accessible independent source, not an unrestricted-network assumption.')
+p('Subcircuit: .SUBCKT LM741/NS 1 2 99 50 28. External order is noninverting, inverting, positive supply, negative supply, output, corresponding to physical LM741 pins 3, 2, 7, 4, 6. Offset-null pins are not exposed. Each XU uses plus minus vp vn out LM741/NS. Supplies are +15 and -15 V. This is the actual LM741 macromodel, not a renamed EDU741 substitute.')
+page();h('ngspice compatibility and model validation')
+p('Unmodified POLY-source parsing required an unavailable initialization of the retained polynomial code model. Explicitly loading the retained spice2poly.cm also crashed a separate exploratory process (exit 139); no package or environment configuration was changed. The working copy translates only two first-order sources algebraically: EOS 7 1 POLY(1) 16 49 1E-3 1 becomes BEOS 7 1 V=1e-3+v(16,49); F6 50 99 POLY(1) V6 450U 1 becomes BF6 50 99 I=450u+i(V6). Coefficients and all other model devices/values remain unchanged. The original and translated files are both bundled. QC verifies exactly those differences.')
+v=json.loads((ROOT/'calculations/model_validation.json').read_text())
+p(f"Independent bench: maximum follower error over -1 to +1 V is {v['follower_max_error_V']*1e3:.6f} mV, consistent with this model's explicit 1 mV offset. Unloaded open-loop saturation is {v['positive_open_loop_saturation_V']:.6f} / {v['negative_open_loop_saturation_V']:.6f} V. A loaded follower step yields a fitted slew rate of {v['slew_V_per_us']:.6f} V/us. The bench checks pin order, polarity, supply connections and finite response; it does not establish agreement with every LM741 datasheet limit or physical device.")
+p('Convergence: final netlists use Gear integration, reltol=1e-5 and abstol=1e-10. Wien initialization constrains plus to 50 mV during the initial operating point, then releases it; UIC was removed to initialize internal macromodel states consistently. Earlier UIC Wien trials aborted near t=0 even though ngspice returned 0. Final checks therefore inspect logs and require the last sample to reach the requested stop time. All 13 final transients reach that time. Known missing-spinit warnings are retained and do not supply any model devices used in the translated netlists.')
+h('Original circuit connections',2)
+for title,txt in [
+('Figure 1 - Wien bridge','RIN=1 kohm from inverting input to ground. RF=1.5 kohm + 510 ohm of a 1 kohm potentiometer, total 2.01 kohm, from output to inverting input. Gain=1+RF/RIN=3.01. Series R2-C2 connects output to noninverting input; R1 and C1 shunt noninverting input to ground. R1=R2=R and C1=C2=C. No amplitude-control component was added. Macromodel saturation limits amplitude and causes measurable distortion.'),
+('Figure 2 - Astable','R1=10 kohm from noninverting input to ground, R2=10 kohm from output to noninverting input. Timing R connects output to inverting input; C shunts that node to ground. beta=R1/(R1+R2)=0.5. Initial capacitor voltage is 50 mV with UIC. Measurements exclude startup.'),
+('Figure 3 - Monostable','R1=R2=10 kohm form an output-to-ground divider, midpoint to noninverting input. Timing R connects output to inverting input; C shunts to ground. D1 anode is at that capacitor node, cathode at ground. Cd=0.01 uF couples the trigger to Rd=470 ohm to ground. D2 anode is at the noninverting input and cathode at the differentiator node. Both assumed diodes use the explicitly listed generic 1N4148 model. Negative trigger edges initiate a LOW pulse; HIGH is stable.'),
+('Figure 4 - Bistable','C couples the left trigger terminal to the INVERTING input; R shunts that node to ground. R1=R2=10 kohm form positive feedback, midpoint to the noninverting input. The +/-VT label denotes feedback threshold, not another source. Omitted supplies are taken as +/-15 V. A nodeset selects initial HIGH; it is a numerical state selection, not a physical set pulse.')]:h(title,2);p(txt)
+page();h('Theory and design equations')
+p('Wien: for equal R/C, bridge phase is zero and feedback=1/3 at f0=1/(2*pi*R*C). Required small-signal amplifier gain is 3. Gain 3.01 provides startup margin, while saturation supplies amplitude limiting in this unstabilized handout circuit. It is not a precision amplitude-regulated sine source. No square-wave duty cycle is assigned.')
+p('Astable: after switching HIGH, Vc=Vs-(1+beta)*Vs*exp(-t/RC). At Vc=beta*Vs, Ton=RC*ln[(1+beta)/(1-beta)]. Symmetrically Toff=Ton; T=2*RC*ln(3), f=1/T for beta=0.5. Finite switching and recovery cause departures from the instantaneous, symmetric voltage-source assumption.')
+p('Monostable: stable HIGH clamps Vc near VD. On switching to -VL, Vc=-VL+(VD+VL)*exp(-t/RC). At Vc=-beta*VL the output returns HIGH. Thus tw=RC*ln[(VL+VD)/(VL*(1-beta))]. Nominal calculation assumptions for this model: VL=13.9 V, VD=0.600 V, beta=0.5. The ideal zero-drop limit RC*ln(2) is also given. Nominal saturation and diode voltage are assumptions for theory, not substituted measurements. Compare the mean measured width against the corrected theoretical width.')
+p('Monostable trigger: 0 to -15 V, first at 10 ms, negative transition time 50 us, return time 1 us, LOW plateau 100 us, repetition period 20 ms (50 Hz). The 50 us ramp sustains the differentiated trigger sufficiently for the LM741 response. The earlier 0.2 us edge caused only a small output dip and did not trigger; that exploratory failure is preserved. Trigger rate is external, not an inherent oscillation frequency. Pulse duty is reported only relative to this trigger sequence.')
+p('Bistable: thresholds are approximately +/-beta*Vs, about +/-7 V. C and R form a high-pass input with decay constant RC. The output retains either state when the input has decayed to zero. Positive inverting-input edges reset LOW; negative edges set HIGH if the transient lasts long enough for the amplifier to respond. A return edge can switch again. There is no inherent period/frequency/duty.')
+p('Bistable trigger: source pulses 0 to +12 V at 1 ms, -12 V at 3 ms, +12 V at 5 ms, -12 V at 7 ms; each returns to zero after 0.2 ms; edge duration 0.2 us. With R=100 ohm and C=0.1 uF, RC=10 us: the input exceeds a roughly 7 V threshold for only about RC*ln(12/7)=5.4 us. The model cannot switch under that short drive. This failure is not hidden by changing the original baseline. Added trial 4 keeps R=100 ohm and increases C to 0.22 uF, producing a third successful bistable configuration.')
+h('Simulation and measurement procedure',2)
+p('Source startup.sh in each fresh shell; generate netlists using trials.json; run ngspice batch; retain logs and actual samples; verify data reaches the stop time. Periodic measurements use the final 40% of each transient; monostable measurements exclude t<5 ms and average three triggered pulses. All output transitions use linearly interpolated 0 V crossings. Rising-to-rising yields mean T; f=1/mean(T). Ton is rising-to-next-falling; Toff=T-Ton; duty=100*Ton/T. LOW pulse width is falling-to-next-rising. Vmax/min are extrema in the analysis window. Plateau estimates use medians beyond 80% of the extrema. No smoothing or synthetic replacement is applied.')
+p('Wien amplitude stationarity compares peak-to-peak values in 60-80% and 80-100% windows and requires less than 1% change. Harmonics 2-5 are fitted by least squares over integer settled cycles to provide a distortion indicator. Bistable retention is sampled after the external pulse returns to zero. Failed switching is explicitly flagged even if a finite positive Vmin exists; that Vmin is not a demonstrated logic LOW.')
+if (ROOT/'calculations/timestep_refinement.json').exists():
+ ref=json.loads((ROOT/'calculations/timestep_refinement.json').read_text());p('Maximum-timestep halving on Wien 1, astable 1, monostable 1 and successful bistable 2: '+', '.join(f"{k}: {v['relative_difference_percent']:.5g}% timing change" for k,v in ref.items())+'. Raw reruns and logs are included.')
+page();h('Observation tables')
+for kind in ['wien','astable','monostable','bistable']:
+ rr=[r for r in rows if r['circuit']==kind];h('Figure '+str(['wien','astable','monostable','bistable'].index(kind)+1)+' - '+kind.title(),2)
+ if kind=='wien':table(['Trial','R / C','Theory Hz','Sim Hz','T ms','Vpp V'],[[r['trial'],f"{r['R_ohm']} ohm / {r['C_F']*1e6:g} uF",f"{r['theoretical_Hz']:.3f}",f"{r['frequency_Hz']:.3f}",f"{r['period_s']*1e3:.4f}",f"{r['Vpp']:.3f}"] for r in rr])
+ elif kind=='astable':table(['Trial / R','C uF','Ton ms','Toff ms','T ms','f Hz','Duty %'],[[f"{r['trial']} / {r['R_ohm']} ohm",.1,f"{r['Ton_s']*1e3:.4f}",f"{r['Toff_s']*1e3:.4f}",f"{r['period_s']*1e3:.4f}",f"{r['frequency_Hz']:.3f}",f"{r['duty_percent']:.3f}"] for r in rr])
+ elif kind=='monostable':table(['Trial / R','C uF','Theory tw ms','Sim tw ms','Trigger Hz','Min / Max V'],[[f"{r['trial']} / {r['R_ohm']} ohm",.1,f"{r['theoretical_pulse_s']*1e3:.4f}",f"{r['pulse_width_s']*1e3:.4f}",50,f"{r['Vmin']:.3f} / {r['Vmax']:.3f}"] for r in rr])
+ else:table(['Trial / R','C uF','Trigger','Initial / final','Behavior'],[[f"{r['trial']} / {r['R_ohm']} ohm",f"{r['C_F']*1e6:g}",'+/-12 V',f"{r['initial_state']} / {r['final_state']}",'PASS' if r['status'].startswith('PASS') else 'FAIL: no switch'] for r in rr]);p('Output levels for each bistable trial are listed on its calculation sheet. Baseline trial 1 does not demonstrate LOW; its positive minimum is a dip, not a second stable state. T, f, duty and frequency error are N/A for all bistable trials.')
+for r in rows:
+ page();kind=r['circuit'];name=f"{kind}_{r['trial']:02}";h(f'Calculation sheet - {name}');p('Behavior result: '+r['status'])
+ p(f"Given: R={r['R_ohm']} ohm; C={r['C_F']*1e6:g} uF = {r['C_F']:.9g} F; supplies +/-15 V.")
+ if kind=='wien':
+  p('R1=R2=R; C1=C2=C; RIN=1 kohm; RF=2.01 kohm = 1.5 kohm + 510 ohm potentiometer setting; gain=3.01.')
+  p(f"f theory=1/[2*pi*({r['R_ohm']})*({r['C_F']:.9g})]={r['theoretical_Hz']:.6f} Hz.")
+ elif kind=='astable':
+  p(f"R1=R2=10 kohm; beta=0.5. Ton ideal=Toff ideal=R*C*ln(3)={r['R_ohm']*r['C_F']*math.log(3)*1e3:.6f} ms. T ideal=2*({r['R_ohm']})*({r['C_F']:.9g})*ln(3); f theory={r['theoretical_Hz']:.6f} Hz.")
+ if kind in ['wien','astable']:
+  p(f"Measured mean T={r['period_s']*1e3:.6f} ms across {r['cycles_measured']} settled cycles; period SD={r['period_std_s']*1e6:.6g} us. f sim=1/T={r['frequency_Hz']:.6f} Hz.")
+  p(f"Error=|{r['frequency_Hz']:.6f}-{r['theoretical_Hz']:.6f}|/{r['theoretical_Hz']:.6f}*100={r['error_percent']:.6f}%.")
+  if kind=='wien':p(f"Harmonic distortion indicator (2-5)={r['THD_2to5_percent']:.5f}%; amplitude drift={r['amplitude_drift_percent']:.6g}%. Startup seed: plus constrained to 50 mV for initial operating point, released during transient. Duty: N/A for this near-sinusoidal output. Model saturation supplies amplitude limiting; no AGC added.")
+  else:p(f"Ton={r['Ton_s']*1e3:.6f} ms; Toff={r['Toff_s']*1e3:.6f} ms; T=Ton+Toff. Duty=100*Ton/T={r['duty_percent']:.6f}%. Plateau HIGH/LOW={r['Vhigh_plateau']:.6f}/{r['Vlow_plateau']:.6f} V.")
+ elif kind=='monostable':
+  p('R1=R2=10 kohm, Rd=470 ohm, Cd=0.01 uF; beta=0.5. HIGH is stable, LOW quasi-stable. Nominal theory assumes VL=13.9 V and VD=0.6 V.')
+  p(f"tw theory=({r['R_ohm']})*({r['C_F']:.9g})*ln[(13.9+0.6)/(13.9*(1-0.5))]={r['theoretical_pulse_s']*1e3:.6f} ms. Ideal zero-drop limit RC*ln(2)={r['ideal_diode_pulse_s']*1e3:.6f} ms.")
+  p(f"Measured width={r['pulse_width_s']*1e3:.6f} ms, three pulses; SD={r['pulse_width_std_s']*1e6:.6g} us. Width error=|{r['pulse_width_s']*1e3:.6f}-{r['theoretical_pulse_s']*1e3:.6f}|/{r['theoretical_pulse_s']*1e3:.6f}*100={r['error_percent']:.6f}%.")
+  p(f"External trigger T=20 ms; trigger f=50 Hz. Output duty relative to this sequence={r['duty_percent']:.5f}%. Plateau HIGH/LOW={r['Vhigh_plateau']:.6f}/{r['Vlow_plateau']:.6f} V. Startup pulse is excluded; only triggered events near 10, 30 and 50 ms are averaged. No free-running frequency is assigned.")
+ else:
+  p(f"R1=R2=10 kohm; beta=0.5. RC=({r['R_ohm']})*({r['C_F']:.9g})={r['R_ohm']*r['C_F']*1e6:.3f} us, a trigger decay constant, not period. Approximate positive threshold beta*Vmax={r['threshold_V']:.6f} V.")
+  p('Output 0 V switch times (ms): '+(', '.join(f'{v*1e3:.6f}' for v in r['switch_times_s']) or 'NONE - failed to switch'))
+  p('Retained output medians (V) in quiet windows 0.2-0.8, 1.5-2.8, 3.5-4.8, 5.5-6.8, 7.5-8.8 ms: '+', '.join(f'{v:.6f}' for v in r['retained_levels_V']))
+  if 'blocker' in r:p('Failure explanation: '+r['blocker']+' No output LOW or successful latch transition is claimed. Extra trial 4 varies C to 0.22 uF; it does not replace the original baseline observation.')
+  p(f"Initial {r['initial_state']}; final {r['final_state']}. Inherent frequency, period, duty and frequency-error calculation: N/A. Return edges of the AC-coupled trigger may also switch the latch.")
+ p(f"Analysis-window extrema: Vmax={r['Vmax']:.6f} V; Vmin={r['Vmin']:.6f} V; Vpp=Vmax-Vmin={r['Vpp']:.6f} V. Data: simulation_data/{name}.txt; netlist: circuits/{kind}/{name}.cir. No theoretical waveform samples were substituted.")
+ page();h('Actual ngspice waveform - '+name);pic(ROOT/'waveforms'/(name+'.png'),6.1)
+page();h('Results and discussion')
+passed=[r for r in rows if r['status'].startswith('PASS')];p(f'{len(passed)} of {len(rows)} final LM741 macromodel behavior trials pass. All final transients reach their requested stop time. Each of the four circuit types has three successful component configurations; the original-value bistable trial is additionally retained as a failed fourth observation for that circuit.')
+p('Wien frequency scales approximately as 1/(RC), and all three outputs settle with harmonic distortion about 0.6%. Amplitude is limited by output saturation; the handout lacks a lamp, diode gain control or AGC. Frequencies and amplitudes should not be interpreted as guaranteed component tolerances or hardware specifications.')
+p('Astable timing depends on both RC and switching dynamics; at the smallest RC, LM741 response contributes a substantial fraction of period. Thus the ideal symmetric relaxation formula is less accurate for the fastest trial. The monostable correctly returns to HIGH after a single LOW pulse, with width increasing with R. Its 50 Hz trigger frequency is external. Pulse-width theory assumes fixed saturation and diode voltage, whereas the actual diode and output stage are nonlinear.')
+p('Bistable trial 1 exposes a real bandwidth/slew limitation for the chosen trigger: RC=10 us is too short to induce a state change. Trials 2 and 3 increase R, and added trial 4 increases C while retaining R=100 ohm. These demonstrate persistent HIGH and LOW after trigger return. Changing coupling components is a documented trial variation, not a hidden modification to the original baseline.')
+h('Conclusion',2);p('The earlier missing-LM741-model blocker is resolved: the working model is an accessible, licensed-for-copying, manufacturer-attributed LM741 macromodel with documented compatibility translation and validation. The study now provides 12 successful device-specific simulation trials and one honest baseline failure. The remaining limitation is that baseline bistable configuration under the stated trigger does not switch. No hardware measurement or current-manufacturer-release authentication is claimed.')
+h('Fair record',2);p('Print Experiment_8_Waveform_Printouts.pdf: 12 A4 grayscale sheets. Pages 1-3 Wien trials 1-3; 4-6 astable 1-3; 7-9 monostable 1-3; 10-12 bistable 2-4. The failed original bistable trial is separately printable as Bistable_Baseline_Failure.pdf and should be discussed rather than omitted from the rough record. Retain component labels, source/model labels and measured captions.')
+h('Rough record',2);p('Copy aim, apparatus, concise theory, original Figures 1-4, fixed/varied values, calculations with substitutions and units, procedure, the four observation tables, comparison, results, discussion and conclusion. Include the baseline failure and trigger edge change. Mark bistable autonomous timing N/A. Keep trigger frequency distinct from monostable pulse width.')
+p('See instructions/Beginner_Guide.md for exact run and plotting commands, editing trials.json and record preparation. No installation, worktree creation, commit, push or cloud configuration change was performed. SHA256SUMS.txt and QC.json provide final file checks. The earlier supplementary package is preserved separately.')
+for n in range(1,4):page();h(f'Original laboratory PDF - page {n}');pic(ROOT/'source'/f'lab-page-{n}.png',6.1)
+(ROOT/'reports/Experiment_8_Complete_Report.md').write_text('\n'.join(md))
+def footer(canvas,doc):
+ canvas.setFont('Helvetica',8);canvas.drawString(38,23,'Experiment 8 | National Semiconductor LM741 macromodel');canvas.drawRightString(A4[0]-38,23,str(doc.page))
+SimpleDocTemplate(str(ROOT/'reports/Experiment_8_Complete_Report.pdf'),pagesize=A4,rightMargin=38,leftMargin=38,topMargin=35,bottomMargin=38).build(story,onFirstPage=footer,onLaterPages=footer)
+doc.save(ROOT/'reports/Experiment_8_Complete_Report.docx')
+print('LM741 report PDF, DOCX and Markdown generated')

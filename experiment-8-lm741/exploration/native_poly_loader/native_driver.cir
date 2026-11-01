@@ -1,0 +1,7 @@
+Load retained polynomial code model before source
+.control
+codemodel /workspace/circuit-tools/ngspice/usr/lib/x86_64-linux-gnu/ngspice/spice2poly.cm
+source /workspace/circuit-outputs/experiment-8-lm741/circuits/validation/model_native.cir
+quit
+.endc
+.end

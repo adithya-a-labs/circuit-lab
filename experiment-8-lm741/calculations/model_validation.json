@@ -1,0 +1,10 @@
+{
+  "follower_max_error_V": 0.0010265499999999594,
+  "positive_open_loop_saturation_V": 14.0271682,
+  "negative_open_loop_saturation_V": -14.0271682,
+  "slew_V_per_us": 0.3205432070513346,
+  "pin_order": "noninverting,inverting,+supply,-supply,out",
+  "supply_V": "+15/-15",
+  "model": "National Semiconductor LM741/NS",
+  "status": "PASS (macromodel validation; not physical hardware)"
+}

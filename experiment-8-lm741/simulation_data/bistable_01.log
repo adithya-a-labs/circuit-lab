@@ -1,0 +1,63 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: bistable_01 - original lab topology; national semiconductor lm741 macromodel
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+vp                                          15
+vn                                         -15
+out                                    13.9536
+plus                                   6.90706
+trigger                                      0
+minus                               0.00137914
+xu.3                                   3.45422
+xu.4                                   6.19354
+xu.5                                        15
+xu.6                                   14.9484
+xu.7                                   6.90817
+xu.49                                        0
+xu.16                              0.000109233
+xu.8                                     13.37
+xu.9                                   14.0272
+xu.10                                   -13.37
+xu.98                                        0
+xu.15                                  14.0272
+xu.17                                        0
+xu.23                                  14.0272
+xu.24                                  14.0273
+xu.26                                  14.6036
+xu.22                                  13.9536
+xu.25                                  14.0094
+xu.27                                  13.3036
+xu.21                                  13.7736
+xu.20                                  14.1336
+v.xu.v6#branch                    -4.75818e-06
+b.xu.beos#branch                  -1.59737e-07
+l.xu.l3#branch                     0.000704657
+l.xu.l2#branch                    -1.09233e-07
+e.xu.e1#branch                     0.000704657
+e.xu.eh#branch                      0.00010825
+v.xu.v4#branch                    -1.07451e-13
+v.xu.v5#branch                    -2.54528e-13
+v.xu.v7#branch                    -0.000709416
+v.xu.v3#branch                     2.73982e-11
+v.xu.v2#branch                     -0.00010825
+vtrigger#branch                              0
+vneg#branch                         0.00162976
+vpos#branch                        -0.00233426
+
+ Reference value :  2.96079e-03
+ Reference value :  5.92043e-03
+ Reference value :  8.97501e-03
+No. of Data Rows : 90537
+ngspice-44.2 done
+Warning: can't find the initialization file spinit.

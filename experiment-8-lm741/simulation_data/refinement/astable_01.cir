@@ -1,0 +1,19 @@
+astable_01 - original lab topology; National Semiconductor LM741 macromodel
+.include /workspace/circuit-outputs/experiment-8-lm741/models/LM741_ngspice.lib
+Vpos vp 0 15
+Vneg vn 0 -15
+.model D4148 D(Is=2.52n Rs=0.568 N=1.752 Cjo=4p M=0.4 Tt=20n)
+R1 plus 0 10k
+R2 out plus 10k
+R out minus 4700
+C minus 0 1e-07 IC=0.05
+XU plus minus vp vn out LM741/NS
+.options reltol=1e-5 abstol=1e-10 method=gear maxord=2
+.control
+set wr_singlescale
+set wr_vecnames
+tran 5e-07 0.0235 0 5e-07 uic
+wrdata /workspace/circuit-outputs/experiment-8-lm741/simulation_data/refinement/astable_01.txt v(out) v(minus)
+quit
+.endc
+.end
